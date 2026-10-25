@@ -8,7 +8,15 @@ export function Screen({ children }: { children: ReactNode }) {
   const colors = useColors();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space[6], gap: space[10] }}>{children}</ScrollView>
+      <ScrollView
+        contentContainerStyle={{ padding: space[6], gap: space[10] }}
+        // Buttons get the tap while the keyboard is up (otherwise the first tap only closes it),
+        // and content scrolls clear of the keyboard instead of hiding behind it.
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
+        {children}
+      </ScrollView>
     </SafeAreaView>
   );
 }

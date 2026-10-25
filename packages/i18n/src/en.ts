@@ -10,6 +10,23 @@ export const en = {
   'status.answeringIn': 'Answering in {language}',
   'status.unreachable': "Can't reach the API",
   'status.retry': 'Try again',
+  'auth.field.name': 'Name',
+  'auth.field.email': 'Email',
+  'auth.field.password': 'Password',
+  'auth.signIn.title': 'Welcome back',
+  'auth.signIn.submit': 'Sign in',
+  'auth.signIn.switch': 'New here? Create an account',
+  'auth.signIn.failed': "That email and password don't match.",
+  'auth.signUp.title': 'Lock in with an account',
+  'auth.signUp.submit': 'Create account',
+  'auth.signUp.switch': 'Already have an account? Sign in',
+  'auth.error.name': 'Tell us your name.',
+  'auth.error.email': "Use a valid email that doesn't already have an account.",
+  'auth.error.password': 'Your password is too short.',
+  'auth.error.tooMany': 'Too many tries. Wait a minute, then try again.',
+  'auth.error.network': "Can't reach Lockmate. Check your connection.",
+  'auth.signOut': 'Sign out',
+  'home.greeting': 'Hi {name}',
 } as const;
 
 export type MessageKey = keyof typeof en;

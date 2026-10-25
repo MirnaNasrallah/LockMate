@@ -4,10 +4,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { ApiProvider } from '../api';
+import { SessionProvider, useSession } from '../features/auth/session';
 import { deviceLocale, LocaleProvider } from '../locale';
 import { fontFiles } from '../ui/fonts';
 
-// Keep the native splash up until Rubik has loaded, so the first frame is already on brand.
+// Keep the native splash up until Rubik and the stored session are ready, so the first frame is
+// already on brand and on the right screen.
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -16,7 +19,27 @@ export default function RootLayout() {
   const [locale] = useState(deviceLocale);
 
   // If the fonts fail to load, carry on with the system font rather than a stuck splash.
-  const ready = fontsLoaded || fontError !== null;
+  if (!fontsLoaded && fontError === null) {
+    return null;
+  }
+
+  return (
+    <LocaleProvider locale={locale}>
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider>
+          <ApiProvider>
+            <StatusBar style="auto" />
+            <Navigator />
+          </ApiProvider>
+        </SessionProvider>
+      </QueryClientProvider>
+    </LocaleProvider>
+  );
+}
+
+/** Signed-in people get the app; everyone else gets sign-in and sign-up. */
+function Navigator() {
+  const { ready, token } = useSession();
 
   useEffect(() => {
     if (ready) {
@@ -29,11 +52,14 @@ export default function RootLayout() {
   }
 
   return (
-    <LocaleProvider locale={locale}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
-      </QueryClientProvider>
-    </LocaleProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={token !== null}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
+      <Stack.Protected guard={token === null}>
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="sign-up" />
+      </Stack.Protected>
+    </Stack>
   );
 }
