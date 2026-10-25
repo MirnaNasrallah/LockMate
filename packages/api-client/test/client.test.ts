@@ -39,4 +39,63 @@ describe('createApiClient', () => {
       ['en', 'ar'],
     );
   });
+
+  it('sends the device token while signed in, and nothing once signed out', async () => {
+    const api = fakeApi();
+    let token: string | null = '1|abc';
+    const client = createApiClient({ baseUrl: BASE_URL, locale: () => 'en', token: () => token, fetch: api.fetch });
+
+    await client.GET('/me');
+    token = null;
+    await client.GET('/me');
+
+    assert.deepEqual(
+      api.requests.map((request) => request.headers.get('Authorization')),
+      ['Bearer 1|abc', null],
+    );
+  });
+
+  it('reports a rejected token, but not a 401 for a request that had none', async () => {
+    let rejections = 0;
+    let token: string | null = '1|expired';
+    const client = createApiClient({
+      baseUrl: BASE_URL,
+      locale: () => 'en',
+      token: () => token,
+      onUnauthorized: () => rejections++,
+      fetch: async () => Response.json({ message: 'Unauthenticated.' }, { status: 401 }),
+    });
+
+    await client.GET('/me');
+    token = null;
+    await client.GET('/me');
+
+    assert.equal(rejections, 1);
+  });
+
+  // On phones, Expo's fetch returns its own response class, not the global Response. The
+  // middleware must only watch responses: returning one makes openapi-fetch check `instanceof
+  // Response`, which fails there and turned every answer into a thrown error.
+  it("works with a fetch whose responses aren't the global Response class", async () => {
+    const foreignResponse = {
+      status: 422,
+      ok: false,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      text: async () => JSON.stringify({ message: 'Invalid.', errors: { password: ['Too short.'] } }),
+    } as unknown as Response;
+    const client = createApiClient({
+      baseUrl: BASE_URL,
+      locale: () => 'en',
+      token: () => '1|abc',
+      onUnauthorized: () => undefined,
+      fetch: async () => foreignResponse,
+    });
+
+    const { error, response } = await client.POST('/auth/login', {
+      body: { email: 'salma@example.test', password: 'short', device_name: 'iPhone' },
+    });
+
+    assert.equal(response.status, 422);
+    assert.deepEqual(error, { message: 'Invalid.', errors: { password: ['Too short.'] } });
+  });
 });
